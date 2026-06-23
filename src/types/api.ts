@@ -3,7 +3,7 @@ export interface Page<T> { content: T[]; totalElements: number; totalPages: numb
 export interface TokenResponse { accessToken: string; refreshToken: string; }
 export interface User { id: number; email: string; name: string; role: string; }
 export type EventStatus = 'UPCOMING'|'ON_SALE'|'SOLD_OUT'|'ENDED';
-export interface EventDto { id: number; title: string; venue: string; eventDate: string; status: EventStatus; }
+export interface EventDto { id: number; title: string; venue: string; eventDate: string; status: EventStatus; category: string; posterUrl: string | null; }
 export type SeatStatus = 'AVAILABLE'|'HELD'|'SOLD';
 export interface SeatDto { id: number; seatGradeId: number; rowName: string; seatNumber: number; status: SeatStatus; }
 export type ReservationStatus = 'PENDING'|'CONFIRMED'|'CANCELLED'|'EXPIRED';

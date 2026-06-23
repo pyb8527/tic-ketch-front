@@ -1,2 +1,72 @@
-@tailwind base; @tailwind components; @tailwind utilities;
-body { @apply bg-bg text-gray-200; margin: 0; font-family: system-ui, -apple-system, sans-serif; }
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ──────────────────────────────────────────────────────────
+   시맨틱 토큰 — oklch 성분(L C H)만 담는다. alpha는 유틸에서 합성.
+   기본 = 라이트, .dark = 다크 재매핑(반전 아님)
+   ────────────────────────────────────────────────────────── */
+@layer base {
+  :root {
+    --canvas: 1 0 0;                /* neutral-0   */
+    --surface: 0.970 0.004 270;     /* neutral-100 */
+    --surface-2: 0.985 0.002 270;   /* neutral-50  (인풋/내부면) */
+    --border: 0.930 0.006 270;      /* neutral-200 */
+    --border-strong: 0.880 0.008 270; /* neutral-300 */
+    --fg: 0.280 0.010 270;          /* neutral-800 */
+    --fg-muted: 0.480 0.012 270;    /* neutral-600 */
+    --fg-subtle: 0.710 0.010 270;   /* neutral-400 */
+
+    color-scheme: light;
+  }
+
+  .dark {
+    --canvas: 0.155 0.006 270;      /* neutral-950 */
+    --surface: 0.210 0.008 270;     /* neutral-900 */
+    --surface-2: 0.280 0.010 270;   /* neutral-800 (elevated) */
+    --border: 0.390 0.012 270;      /* neutral-700 */
+    --border-strong: 0.480 0.012 270; /* neutral-600 */
+    --fg: 0.970 0.004 270;          /* neutral-100 */
+    --fg-muted: 0.710 0.010 270;    /* neutral-400 */
+    --fg-subtle: 0.480 0.012 270;   /* neutral-600 */
+
+    color-scheme: dark;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    @apply bg-canvas text-fg font-sans;
+    margin: 0;
+    /* 한국어 줄바꿈 자연화 */
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+  }
+
+  /* 테마 전환 시 색 보간(과하지 않게) */
+  body,
+  body * {
+    transition-property: background-color, border-color, color, fill;
+    transition-duration: 120ms;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* 숫자: 자릿수 흔들림 방지 */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* 접근성: 모션 최소화 */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+    }
+  }
+}

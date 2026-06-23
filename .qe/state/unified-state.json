@@ -1,0 +1,29 @@
+{
+  "session_stats": {
+    "tool_calls": 67,
+    "session_start": 1782204420513,
+    "context_loaded": [],
+    "usage": {
+      "input_tokens": 23489,
+      "output_tokens": 164,
+      "cache_read_tokens": 0,
+      "cache_creation_tokens": 0
+    },
+    "last_tool": "Read",
+    "last_call": 1782206154239,
+    "_analysis_hinted": true,
+    "skills_used": [
+      "qe-framework:Qfrontend-design"
+    ],
+    "_agentation_hinted": true,
+    "warning_severity": "warning",
+    "last_warning_ratio": 0.7239,
+    "last_warning_call": 66
+  },
+  "memo": {
+    "files": {},
+    "meta": {},
+    "total_size": 0,
+    "blocked_reads": 0
+  }
+}

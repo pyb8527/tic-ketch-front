@@ -1,35 +1,38 @@
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { getEvent } from '../api/events';
-import type { EventStatus } from '../types/api';
+import { categoryMeta, statusLabel } from '../lib/category';
+import Card from '../components/ui/Card';
+import Button from '../components/ui/Button';
+import { ErrorState, LoadingState } from '../components/ui/States';
 
-function statusLabel(status: EventStatus): string {
-  switch (status) {
-    case 'ON_SALE':
-      return '판매 중';
-    case 'UPCOMING':
-      return '예정';
-    case 'SOLD_OUT':
-      return '매진';
-    case 'ENDED':
-      return '종료';
-    default:
-      return status;
-  }
-}
+function Poster({ posterUrl, category }: { posterUrl: string | null; category: string }) {
+  const [imgFailed, setImgFailed] = useState(false);
+  const cat = categoryMeta(category);
+  const showFallback = imgFailed || !posterUrl;
 
-function statusColor(status: EventStatus): string {
-  switch (status) {
-    case 'ON_SALE':
-      return 'text-accent2';
-    case 'UPCOMING':
-      return 'text-accent';
-    case 'SOLD_OUT':
-    case 'ENDED':
-      return 'text-muted';
-    default:
-      return 'text-muted';
-  }
+  return (
+    <div className="w-full overflow-hidden rounded-xl">
+      {showFallback ? (
+        <div
+          className="flex aspect-[3/4] w-full items-center justify-center text-7xl"
+          style={{
+            backgroundImage: `linear-gradient(135deg, ${cat.color}55 0%, #0f1117 100%)`,
+          }}
+        >
+          {cat.emoji}
+        </div>
+      ) : (
+        <img
+          src={posterUrl ?? ''}
+          alt=""
+          className="aspect-[3/4] w-full object-cover"
+          onError={() => setImgFailed(true)}
+        />
+      )}
+    </div>
+  );
 }
 
 export default function EventDetailPage() {
@@ -37,76 +40,97 @@ export default function EventDetailPage() {
   const navigate = useNavigate();
   const eventId = Number(id);
 
-  if (isNaN(eventId)) {
-    return (
-      <div className="py-20 text-center text-danger">
-        유효하지 않은 공연 ID입니다.
-      </div>
-    );
-  }
-
-  const { data, isLoading, isError, error } = useQuery({
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['event', eventId],
     queryFn: () => getEvent(eventId),
     enabled: !isNaN(eventId),
   });
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-20 text-muted">
-        로딩 중...
-      </div>
-    );
+  if (isNaN(eventId)) {
+    return <ErrorState title="잘못된 접근" message="유효하지 않은 공연 ID입니다." />;
   }
-
+  if (isLoading) return <LoadingState />;
   if (isError) {
     return (
-      <div className="py-20 text-center text-danger">
-        오류가 발생했습니다: {error instanceof Error ? error.message : '알 수 없는 오류'}
-      </div>
+      <ErrorState
+        message={error instanceof Error ? error.message : '알 수 없는 오류'}
+        onRetry={() => refetch()}
+      />
     );
   }
-
   if (!data) return null;
 
+  const cat = categoryMeta(data.category);
+  const status = statusLabel(data.status);
+  const bookable = data.status === 'ON_SALE' || data.status === 'UPCOMING';
+
   return (
-    <div className="max-w-2xl mx-auto">
-      <div className="bg-surface rounded-2xl p-8">
-        <h1 className="text-3xl font-bold text-gray-100 mb-6">{data.title}</h1>
+    <div className="mx-auto max-w-3xl animate-fade-in">
+      <button
+        onClick={() => navigate(-1)}
+        className="mb-4 inline-flex items-center gap-1 rounded-md text-sm text-fg-muted transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+      >
+        <span aria-hidden>←</span> 목록으로
+      </button>
 
-        <dl className="space-y-4 mb-8">
-          <div className="flex gap-3">
-            <dt className="text-muted w-16 shrink-0">장소</dt>
-            <dd className="text-gray-200">{data.venue}</dd>
-          </div>
-          <div className="flex gap-3">
-            <dt className="text-muted w-16 shrink-0">일시</dt>
-            <dd className="text-gray-200">
-              {new Date(data.eventDate).toLocaleString('ko-KR')}
-            </dd>
-          </div>
-          <div className="flex gap-3">
-            <dt className="text-muted w-16 shrink-0">상태</dt>
-            <dd className={`font-semibold ${statusColor(data.status)}`}>
-              {statusLabel(data.status)}
-            </dd>
-          </div>
-        </dl>
-
-        <div className="flex flex-col sm:flex-row gap-3">
-          <button
-            onClick={() => navigate(`/events/${eventId}/seats`)}
-            className="flex-1 py-3 px-6 bg-accent text-white font-semibold rounded-xl hover:opacity-90 transition-opacity"
-          >
-            좌석 선택
-          </button>
-          <button
-            onClick={() => navigate(`/queue/${eventId}`)}
-            className="flex-1 py-3 px-6 bg-accent2 text-bg font-semibold rounded-xl hover:opacity-90 transition-opacity"
-          >
-            대기열 입장
-          </button>
+      <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
+        {/* Poster */}
+        <div className="w-full sm:w-56 shrink-0">
+          <Poster posterUrl={data.posterUrl} category={data.category} />
         </div>
+
+        {/* Info */}
+        <Card elevated className="flex-1 p-6">
+          {/* Category badge */}
+          <span
+            className="mb-3 inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-semibold"
+            style={{ color: cat.color, backgroundColor: cat.color + '22' }}
+          >
+            {cat.emoji} {cat.label}
+          </span>
+
+          <h1 className="break-keep font-display text-2xl font-bold leading-tight text-fg">
+            {data.title}
+          </h1>
+
+          <dl className="mt-5 space-y-3 border-t border-border pt-5">
+            <div className="flex gap-3">
+              <dt className="w-14 shrink-0 text-sm text-fg-muted">장소</dt>
+              <dd className="text-fg">{data.venue}</dd>
+            </div>
+            <div className="flex gap-3">
+              <dt className="w-14 shrink-0 text-sm text-fg-muted">일시</dt>
+              <dd className="tabular text-fg">
+                {new Date(data.eventDate).toLocaleString('ko-KR', { dateStyle: 'medium', timeStyle: 'short' })}
+              </dd>
+            </div>
+            <div className="flex gap-3">
+              <dt className="w-14 shrink-0 text-sm text-fg-muted">상태</dt>
+              <dd>
+                <span
+                  className="rounded-full px-2 py-0.5 text-sm font-semibold"
+                  style={{ color: status.color, backgroundColor: status.color + '22' }}
+                >
+                  {status.label}
+                </span>
+              </dd>
+            </div>
+          </dl>
+
+          <div className="mt-6">
+            <Button
+              size="lg"
+              fullWidth
+              onClick={() => navigate(`/queue/${eventId}`)}
+              disabled={!bookable}
+            >
+              입장하기
+            </Button>
+            <p className="mt-2 text-center text-xs text-fg-subtle">
+              대기열이 있으면 잠시 대기 후 입장합니다.
+            </p>
+          </div>
+        </Card>
       </div>
     </div>
   );

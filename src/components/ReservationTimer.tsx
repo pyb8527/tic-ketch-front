@@ -1,6 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
+import { cn } from '../lib/cn';
 
-export default function ReservationTimer({ expiresAt, onExpire }: { expiresAt: string; onExpire: () => void }) {
+export default function ReservationTimer({
+  expiresAt,
+  onExpire,
+}: {
+  expiresAt: string;
+  onExpire: () => void;
+}) {
   const computeRemaining = () =>
     Math.max(0, Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000));
 
@@ -8,27 +15,25 @@ export default function ReservationTimer({ expiresAt, onExpire }: { expiresAt: s
   const onExpireRef = useRef(onExpire);
   const firedRef = useRef(false);
 
-  // Keep onExpireRef up-to-date every render without re-running the interval effect
   useEffect(() => {
     onExpireRef.current = onExpire;
   });
 
   useEffect(() => {
-    // Reset guard when expiresAt changes
     firedRef.current = false;
     setRemaining(computeRemaining());
 
-    const id = setInterval(() => {
+    const tid = setInterval(() => {
       const secs = computeRemaining();
       setRemaining(secs);
       if (secs === 0 && !firedRef.current) {
         firedRef.current = true;
-        clearInterval(id);
+        clearInterval(tid);
         onExpireRef.current();
       }
     }, 1000);
 
-    return () => clearInterval(id);
+    return () => clearInterval(tid);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [expiresAt]);
 
@@ -38,7 +43,14 @@ export default function ReservationTimer({ expiresAt, onExpire }: { expiresAt: s
 
   return (
     <span
-      className={`font-mono text-2xl font-bold tabular-nums ${isDanger ? 'text-danger' : 'text-accent2'}`}
+      role="timer"
+      aria-live={isDanger ? 'assertive' : 'off'}
+      className={cn(
+        'tabular font-mono text-2xl font-bold transition-colors',
+        isDanger
+          ? 'animate-pulse text-error-600 dark:text-error-400'
+          : 'text-success-600 dark:text-success-300',
+      )}
     >
       {mm}:{ss}
     </span>
